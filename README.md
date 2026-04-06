@@ -86,16 +86,19 @@ In a separate terminal:
 ```bash
 curl -X POST -F "file=@src/serving/adipose.jpg" http://localhost:8000/predict
 ```
-
+This will use the sample image provided in the repo. To use your own image, replace the path shown above
+```bash
+curl -X POST -F "file=@full/path/to/test_image.jpg" http://localhost:8000/predict
+```
 ## Running Locally
 
 ### 1. Create environment
-Note: You will need Python version 3.10
+Note: You will need Python version 3.10. You might need to download it from https://www.python.org/downloads/release/python-3100/
 
 ```bash
-python3 -m venv venv
-. venv/bin/activate && python3 -m pip install --upgrade pip 
-pip install -r requirements.txt
+conda create -n myenv python=3.10 # to enforce python version
+conda activate myenv
+python3 -m pip install --upgrade pip && pip install -r requirements.txt
 ```
 Note: make setup is available, but manual activation is recommended since Make does not persist environments across commands.
 
@@ -113,6 +116,15 @@ To run the full pipeline:
 ```bash
 make all
 make serve
+```
+### 3. Send a test request to serving layer
+In a separate terminal:
+```bash
+curl -X POST -F "file=@src/serving/adipose.jpg" http://localhost:8000/predict
+```
+This will use the sample image provided in the repo. To use your own image, replace the path shown above
+```bash
+curl -X POST -F "file=@full/path/to/test_image.jpg" http://localhost:8000/predict
 ```
 
 ## Pipeline Breakdown
