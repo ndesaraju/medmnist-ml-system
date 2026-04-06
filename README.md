@@ -60,7 +60,7 @@ Key features:
 ---
 ## Running with Docker
 
-To ensure reproducibility and avoid dependency issues, the project can be run inside a Docker container. If you prefer to run this project locally, please see intructions in the "Setup" section below
+To ensure reproducibility and avoid dependency issues, the project can be run inside a Docker container. If you prefer to run this project locally, please see instructions in the "Setup" section below
 
 ### 1. Build the Docker image
 
@@ -82,12 +82,12 @@ This will:
 - start the FastAPI server
 
 ### 3. Send a test request
-In a seperate terminal:
+In a separate terminal:
 ```bash
 curl -X POST -F "file=@src/serving/adipose.jpg" http://localhost:8000/predict
 ```
 
-## Setup
+## Running Locally
 
 ### 1. Create environment
 Note: You will need Python version 3.10
