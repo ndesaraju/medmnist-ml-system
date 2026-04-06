@@ -23,6 +23,7 @@ Key features:
 - Modular pipeline stages
 - Reproducible outputs (versioned models + metrics)
 - FastAPI-based inference API
+- Containerized deployment with Docker
 
 ---
 
@@ -60,7 +61,7 @@ Key features:
 ---
 ## Running with Docker
 
-To ensure reproducibility and avoid dependency issues, the project can be run inside a Docker container. If you prefer to run this project locally, please see instructions in the "Setup" section below
+To ensure reproducibility and avoid dependency issues, the project can be run inside a Docker container. If you prefer to run this project locally, please see instructions in the ["Running Locally"](#running-locally) section below
 
 ### 1. Build the Docker image
 
@@ -90,6 +91,15 @@ This will use the sample image provided in the repo. To use your own image, repl
 ```bash
 curl -X POST -F "file=@full/path/to/test_image.jpg" http://localhost:8000/predict
 ```
+Example response:
+
+```JSON
+{
+    "prediction_index":6,
+    "prediction_label":"Norm Colon Mucosa",
+    "confidence":0.5956103801727295
+}
+```
 ## Running Locally
 
 ### 1. Create environment
@@ -117,7 +127,7 @@ To run the full pipeline:
 make all
 make serve
 ```
-### 3. Send a test request to serving layer
+### 3. Send a test request to the serving layer
 In a separate terminal:
 ```bash
 curl -X POST -F "file=@src/serving/adipose.jpg" http://localhost:8000/predict
@@ -126,13 +136,19 @@ This will use the sample image provided in the repo. To use your own image, repl
 ```bash
 curl -X POST -F "file=@full/path/to/test_image.jpg" http://localhost:8000/predict
 ```
+Example response:
 
+```JSON
+{
+    "prediction_index":6,
+    "prediction_label":"Norm Colon Mucosa",
+    "confidence":0.5956103801727295
+}
+```
 ## Pipeline Breakdown
 ### 1. Data (make data)
 
-Downloads and caches data to 
-
-`data/raw/`
+Downloads and caches data to data/raw/
 
 ### 2. Preprocessing (make preprocess)
 Validates the data pipeline and ensures transforms are correctly applied.
@@ -168,31 +184,18 @@ Metrics computed:
 
 Evaluation is decoupled from the model for modularity.
 
-### 6. Serving
+### 6. Online inference (make serve)
+Provides real-time predictions via a REST API.
 
-Start API:
-```bash
-uvicorn src.serving.app:app --reload
-```
-OR
-```bash
-make serve
-```
+- Built with FastAPI
+- Loads models/latest.pt at startup
+- Reuses model architecture and preprocessing from training
 
-Test endpoint:
-```bash
-curl -X POST -F "file=@src/serving/adipose.jpg" http://localhost:8000/predict
-```
+Key Design Decisions:
 
-Example response:
-
-```JSON
-{
-    "prediction_index":6,
-    "prediction_label":"Norm Colon Mucosa",
-    "confidence":0.5956103801727295
-}
-```
+- Single source of truth model (latest.pt)
+- Shared preprocessing pipeline (prevents train/serve skew)
+- Stateless API for easy scaling and containerization
 
 ## Configuration (config.yaml)
 
@@ -245,7 +248,7 @@ Why use custom_cnn:
 - Lower computational cost
 - Strong performance on MedMNIST
 
-resnet18 is included as a configurable option to demonstrate extensibilty, but custom_cnn is preferred for this task due to better efficiency-performance tradeoff.
+resnet18 is included as a configurable option to demonstrate extensibility, but custom_cnn is preferred for this task due to better efficiency-performance tradeoff.
 
 ## Reproducibility
 - Config-driven pipeline
