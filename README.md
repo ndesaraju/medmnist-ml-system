@@ -58,13 +58,34 @@ Key features:
 ```
 
 ---
-TODO: clear instructions for how to use docker here
-# Build image
-docker build -t medmnist-ml .
+## Running with Docker
 
-# Run full pipeline + serve
+To ensure reproducibility and avoid dependency issues, the project can be run inside a Docker container. If you prefer to run this project locally, please see intructions in the "Setup" section below
+
+### 1. Build the Docker image
+
+```bash
+docker build -t medmnist-ml .
+```
+
+### 2. Run the full pipeline + serve the model
+``` bash
 docker run -p 8000:8000 medmnist-ml \
     bash -c "make all && make serve"
+```
+This will:
+
+- download the dataset
+- preprocess the data
+- train the model
+- evaluate the model
+- start the FastAPI server
+
+### 3. Send a test request
+In a seperate terminal:
+```bash
+curl -X POST -F "file=@src/serving/adipose.jpg" http://localhost:8000/predict
+```
 
 ## Setup
 
@@ -212,7 +233,7 @@ Why use custom_cnn:
 - Lower computational cost
 - Strong performance on MedMNIST
 
-resnet18 is included as a standard baseline, but custom_cnn is preferred for this task due to better efficiency-performance tradeoff.
+resnet18 is included as a configurable option to demonstrate extensibilty, but custom_cnn is preferred for this task due to better efficiency-performance tradeoff.
 
 ## Reproducibility
 - Config-driven pipeline
@@ -285,6 +306,8 @@ Metrics are computed outside the model for flexibility and reuse.
 - CI/CD and unit tests
 - GPU auto-detection and thread utilization
 - Batch inference endpoint
-- Structured logging
+- Structured logging to replace prints
 - Config validation
 - Sanitize requirement.txt so it only contains the essentials
+- Strictly version and share preprocessing steps between training and inference to ensure consistency
+
