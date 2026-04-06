@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# Data
+data/raw/
+data/processed/
+models/
+results/
+
+# Models & outputs
+models/
+results/
+
+# OS
+.DS_Store

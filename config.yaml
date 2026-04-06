@@ -1,0 +1,19 @@
+data:
+  data_flag: pathmnist
+  raw_dir: ./data/raw
+
+training:
+  device: cpu # options: "cpu", "cuda", "cuda:<index>"
+  seed: 42
+  batch_size: 16 #64
+  epochs: 3 #5
+  lr: 0.001
+
+model:
+  num_classes: 9
+  type: custom_cnn # model type: 'resnet18' (default) or 'custom_cnn (recommended)'
+  class_names: ["Adipose", "Background", "Debris", "Lymphocytes", "Mucus", "Smooth Muscle", "Norm Colon Mucosa", "CAS", "CRA Epithelium"]
+
+output:
+  model_dir: ./models
+  metrics_dir: ./results

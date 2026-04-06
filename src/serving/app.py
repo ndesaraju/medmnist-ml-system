@@ -1,0 +1,87 @@
+from fastapi import FastAPI, UploadFile, File
+from PIL import Image
+import torch
+import io
+
+from torchvision import transforms
+
+from src.model.model import Model
+from src.common.config import load_config
+from src.common.io import load_model_weights
+
+
+# Initialize app
+app = FastAPI(title="MedMNIST Inference API")
+
+
+# Load config + model ONCE at startup
+config = load_config("config.yaml")
+
+model_type = config.get("model", {}).get("type", "resnet18")
+
+model = Model(
+    num_classes=config["model"]["num_classes"],
+    device=config["training"]["device"],
+    model_type=model_type,
+)
+
+model_path = f"{config['output']['model_dir']}/latest.pt"
+load_model_weights(model, model_path, device=config["training"]["device"])
+
+
+# Define inference transform (NO augmentation)
+# Choose inference transform based on model type
+if model_type == "resnet18":
+    # ResNet typically expects larger inputs (224x224)
+    inference_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+    ])
+else:
+    # Custom CNN / MedMNIST default
+    inference_transform = transforms.Compose([
+        transforms.Resize((28, 28)),  # MedMNIST standard size
+        transforms.ToTensor(),
+    ])
+
+
+@app.get("/")
+def root():
+    return {"message": "MedMNIST model is running"}
+
+
+@app.post("/predict")
+async def predict(file: UploadFile = File(...)):
+    """
+    Accepts an image file and returns predicted class.
+    """
+
+    # Read image
+    image_bytes = await file.read()
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+
+    # Apply transforms
+    tensor = inference_transform(image).unsqueeze(0)
+
+    # Move to device
+    tensor = tensor.to(model.device)
+
+    # Run inference
+    with torch.no_grad():
+        outputs = model.model(tensor)
+        probs = torch.softmax(outputs, dim=1)
+        pred = torch.argmax(probs, dim=1).item()
+
+    # Resolve class name if provided in config
+    class_names = config.get("model", {}).get("class_names")
+    pred_label = None
+    if isinstance(class_names, (list, tuple)) and 0 <= pred < len(class_names):
+        pred_label = class_names[pred]
+    else:
+        pred_label = str(pred)
+
+    return {
+        "prediction_index": pred,
+        "prediction_label": pred_label,
+        "confidence": float(torch.max(probs).item())
+    }
