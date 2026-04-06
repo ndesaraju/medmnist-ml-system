@@ -33,7 +33,6 @@ def predict(model_path=None, run_evaluation=False):
         metrics = evaluate(labels, preds, probs)
 
         # get class names from config for nicer formatting
-        # class_names = config.get("model", {}).get("class_names")
         class_names = config["model"]["class_names"]
         print_metrics(metrics, class_names=class_names)
 

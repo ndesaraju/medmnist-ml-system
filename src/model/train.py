@@ -82,7 +82,6 @@ def train():
     metrics_filename = f"metrics_{run_id}.json"
     save_metrics(metrics, config, filename=metrics_filename)
     class_names = config["model"]["class_names"]
-    # .get("model", {}).get("class_names")
     print_metrics(metrics, class_names=class_names)
     print("Training complete.\n")
 
