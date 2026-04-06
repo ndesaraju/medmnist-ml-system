@@ -8,7 +8,7 @@ from torchvision import transforms
 from src.model.model import Model
 from src.common.config import load_config
 from src.common.io import load_model_weights
-
+import os
 
 # Initialize app
 app = FastAPI(title="MedMNIST Inference API")
@@ -26,6 +26,10 @@ model = Model(
 )
 
 model_path = f"{config['output']['model_dir']}/latest.pt"
+
+if not os.path.exists(model_path):
+    raise RuntimeError("Model not found. Run training before serving.")
+
 load_model_weights(model, model_path, device=config["training"]["device"])
 
 
@@ -67,11 +71,14 @@ async def predict(file: UploadFile = File(...)):
     tensor = tensor.to(model.device)
 
     # Run inference
-    with torch.no_grad():
-        outputs = model.model(tensor)
-        probs = torch.softmax(outputs, dim=1)
-        pred = torch.argmax(probs, dim=1).item()
-
+    try:
+        with torch.no_grad():
+            outputs = model.model(tensor)
+            probs = torch.softmax(outputs, dim=1)
+            pred = torch.argmax(probs, dim=1).item()
+    except Exception as e:
+        raise RuntimeError(f"Error during inference: {e}")
+    
     # Resolve class name if provided in config
     class_names = config.get("model", {}).get("class_names")
     pred_label = None
