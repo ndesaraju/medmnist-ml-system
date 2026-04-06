@@ -108,7 +108,7 @@ Note: You will need Python version 3.10. You might need to download it from http
 ```bash
 conda create -n myenv python=3.10 # to enforce python version
 conda activate myenv
-python3 -m pip install --upgrade pip && pip install -r requirements.txt
+python3 -m pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
 ```
 Note: make setup is available, but manual activation is recommended since Make does not persist environments across commands.
 
