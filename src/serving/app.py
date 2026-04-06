@@ -10,9 +10,19 @@ from src.common.config import load_config
 from src.common.io import load_model_weights
 import os
 
+"""
+Initialize and load trained model at API startup.
+
+This ensures:
+- Model is loaded only once (efficient inference)
+- Consistent state across all requests
+- Reduced latency compared to per-request loading
+
+Raises:
+    RuntimeError: If trained model checkpoint is not found.
+"""
 # Initialize app
 app = FastAPI(title="MedMNIST Inference API")
-
 
 # Load config + model ONCE at startup
 config = load_config("config.yaml")
@@ -51,13 +61,42 @@ else:
 
 @app.get("/")
 def root():
+    """
+    Health check endpoint for the inference API.
+
+    Returns:
+        dict: Simple message confirming the API is running..
+    """
     return {"message": "MedMNIST model is running"}
 
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     """
-    Accepts an image file and returns predicted class.
+    Perform real-time image classification via API.
+
+    Accepts an uploaded image file, applies preprocessing, and returns
+    the predicted class along with confidence score.
+
+    Args:
+        file (UploadFile): Image file uploaded via HTTP request.
+
+    Returns:
+        dict: Prediction response containing:
+            - prediction_index (int): Predicted class index
+            - prediction_label (str): Human-readable class label (if available)
+            - confidence (float): Probability of predicted class
+
+    Workflow:
+        1. Read and decode uploaded image
+        2. Apply inference preprocessing pipeline
+        3. Move tensor to model device
+        4. Perform forward pass
+        5. Compute softmax probabilities
+        6. Extract top prediction and confidence
+
+    Raises:
+        RuntimeError: If an error occurs during inference.
     """
 
     # Read image

@@ -9,6 +9,17 @@ import random
 
 
 def get_transforms(train=True):
+    """
+    Define image transformations for training and evaluation. Includes 
+    data augmentation for training and basic preprocessing for evaluation.
+
+    Args:
+        train (bool, optional): Whether to apply training augmentations.
+            Defaults to True.
+
+    Returns:
+        torchvision.transforms.Compose: Transformation pipeline.
+    """
     if train:
         return transforms.Compose([
             transforms.ToTensor(),
@@ -18,6 +29,25 @@ def get_transforms(train=True):
 
 
 def get_dataloaders(config):
+    """
+    Create PyTorch DataLoaders for train, validation, and test splits.
+
+    Args:
+        config (dict): Configuration dictionary containing dataset paths,
+            batch size, and dataset identifier.
+
+    Returns:
+        Tuple[DataLoader, DataLoader, DataLoader]:
+            - Training DataLoader
+            - Validation DataLoader
+            - Test DataLoader
+
+    Workflow:
+        1. Load dataset class dynamically using MedMNIST metadata
+        2. Initialize datasets for train/val/test splits
+        3. Apply appropriate transformations
+        4. Wrap datasets in DataLoaders with configured batch size and shuffling for training
+    """
     info = INFO[config["data"]["data_flag"]]
     DataClass = getattr(medmnist, info["python_class"])
 
@@ -48,7 +78,26 @@ def get_dataloaders(config):
 
 
 def build_features():
-    # Sanity check to ensure data pipeline is working correctly
+    """
+    Validate and inspect the data preprocessing pipeline.
+
+    Performs sanity checks on dataset loading and transformation by:
+        - Initializing DataLoaders
+        - Verifying dataset sizes
+        - Inspecting sample shapes
+        - Confirming expected batch dimensions
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: If dataset length cannot be determined.
+
+    Notes:
+        - Intended as a debugging and validation step.
+        - Does not modify or persist data.
+        - Helps ensure consistency before training.
+    """
     config = load_config("config.yaml")
     batch_size = config["training"]["batch_size"]
 

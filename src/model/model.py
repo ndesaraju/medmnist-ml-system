@@ -7,7 +7,19 @@ import math
 def init_cnn_weights(m):
     """
     Weight initialization helper for custom CNN layers.
+
+    Applies:
+        - Kaiming normal initialization for Conv2d layers
+        - Kaiming uniform initialization for Linear layers
+        - Zero initialization for biases (if present)
+
+    Args:
+        m (torch.nn.Module): A layer/module from the model.
+
+    Returns:
+        None
     """
+
     if isinstance(m, nn.Conv2d):
         nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
         if m.bias is not None:
@@ -20,7 +32,18 @@ def init_cnn_weights(m):
 
 class Model:
     """
-    Wrapper class for PyTorch model to standardize interface.
+    Wrapper class for PyTorch model to standardize interface. Supports multiple 
+    model architectures and abstracts device handling, training loops, and prediction logic.
+
+    Args:
+        num_classes (int): Number of output classes.
+        device (str, optional): Device to run the model on ("cpu" or "cuda").
+            Defaults to "cpu".
+        model_type (str, optional): Type of model to initialize.
+            Supported options:
+                - "resnet18": Standard ResNet-18 architecture
+                - "custom_cnn": Lightweight CNN for small images (e.g., 28x28)
+            Defaults to "resnet18".
     """
 
     def __init__(self, num_classes: int, device: str = "cpu", model_type: str = "resnet18") -> None:
@@ -31,8 +54,23 @@ class Model:
 
     def initialize(self, num_classes: int):
         """
-        Initialize the underlying model. Supports 'resnet18' and 'custom_cnn'.
+    Initialize the model architecture based on the specified model type.
+
+    Supports:
+        - ResNet-18 with a modified fully connected layer
+        - Custom CNN optimized for small image inputs (e.g., MedMNIST)
+
+    Args:
+        num_classes (int): Number of output classes.
+
+    Returns:
+        None
+
+    Notes:
+        - Custom CNN uses Kaiming initialization via `init_cnn_weights`.
+        - Defaults to ResNet-18 if an unknown model_type is provided.    
         """
+
         if self.model_type == "resnet18":
             model = models.resnet18(weights=None)  # Start with untrained weights
             model.fc = nn.Linear(model.fc.in_features, num_classes)
@@ -74,6 +112,20 @@ class Model:
         self.model = model.to(self.device)
 
     def train(self, dataloader, optimizer, criterion):
+        """
+    Train the model for one epoch.
+
+    Performs a full pass over the dataset, updating model weights
+    using backpropagation.
+
+    Args:
+        dataloader (torch.utils.data.DataLoader): Training data loader.
+        optimizer (torch.optim.Optimizer): Optimization algorithm.
+        criterion (torch.nn.Module): Loss function.
+
+    Returns:
+        float: Average training loss over the epoch.
+    """
         self.model.train()
 
         total_loss = 0
@@ -94,24 +146,46 @@ class Model:
         return total_loss / len(dataloader)
 
     def predict_proba(self, dataloader):
-        self.model.eval()
+            """
+        Generate class probability predictions for a dataset.
 
-        all_probs = []
-        all_labels = []
+        Args:
+            dataloader (torch.utils.data.DataLoader): Data loader for inference.
 
-        with torch.no_grad():
-            for images, labels in dataloader:
-                images = images.to(self.device)
+        Returns:
+            Tuple[List[np.ndarray], List[np.ndarray]]:
+                - Predicted class probabilities for each sample
+                - Ground truth labels
+        """
+            self.model.eval()
 
-                outputs = self.model(images)
-                probs = torch.softmax(outputs, dim=1)
+            all_probs = []
+            all_labels = []
 
-                all_probs.extend(probs.cpu().numpy())
-                all_labels.extend(labels.numpy())
+            with torch.no_grad():
+                for images, labels in dataloader:
+                    images = images.to(self.device)
 
-        return all_probs, all_labels
+                    outputs = self.model(images)
+                    probs = torch.softmax(outputs, dim=1)
+
+                    all_probs.extend(probs.cpu().numpy())
+                    all_labels.extend(labels.numpy())
+
+            return all_probs, all_labels
 
     def predict(self, dataloader):
+        """
+        Generate class predictions for a dataset.
+
+        Args:
+            dataloader (torch.utils.data.DataLoader): Data loader for inference.
+
+        Returns:
+            Tuple[List[int], List[np.ndarray]]:
+                - Predicted class indices
+                - Ground truth labels
+        """
         self.model.eval()
 
         all_preds = []
@@ -130,8 +204,33 @@ class Model:
         return all_preds, all_labels
 
     def save(self, path: str):
+        """
+        Save model weights to disk.
+
+        Args:
+            path (str): File path to save the model state dictionary.
+
+        Returns:
+            None
+
+        Notes:
+            - Only saves model parameters (state_dict), not full model object.
+        """
         torch.save(self.model.state_dict(), path)
 
     def load(self, path: str):
+        """
+        Load model weights from disk.
+
+        Args:
+            path (str): File path to the saved model state dictionary.
+
+        Returns:
+            None
+
+        Notes:
+            - Loads weights onto the configured device.
+            - Sets model to evaluation mode after loading.
+        """
         self.model.load_state_dict(torch.load(path, map_location=self.device))
         self.model.eval()

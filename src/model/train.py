@@ -15,6 +15,25 @@ import time
 
 
 def train():
+    """
+    Train a model using the configured dataset and hyperparameters.
+
+    This function orchestrates the full training pipeline:
+        - Loads configuration and sets random seed
+        - Initializes data loaders
+        - Builds model, loss function, and optimizer
+        - Trains for a specified number of epochs
+        - Evaluates on validation set
+        - Saves model checkpoints and metrics
+
+    Returns:
+        None
+
+    Outputs:
+        - Model checkpoint saved to configured directory
+        - Latest model copy saved as "latest.pt"
+        - Metrics saved as a timestamped JSON file
+    """
     print("Loading configuration.")
     config = load_config("config.yaml")
 
